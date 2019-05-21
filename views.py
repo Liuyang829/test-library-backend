@@ -1,6 +1,7 @@
 from django.shortcuts import render
 
 # Create your views here.
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
 from .models import Grade, Subject, User, Question, Paper, Paper_detail, Knowledge1, Knowledge2, School
@@ -11,7 +12,7 @@ import json
 def index(request):
     return HttpResponse("Hello, world. You're at the test_library index.")
 
-
+@csrf_exempt
 def login(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -46,7 +47,7 @@ def login(request):
             res_data['errmsg'] = '账号或密码为空'
     return JsonResponse(res_data)
 
-
+@csrf_exempt
 def register(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -117,6 +118,7 @@ def questionlist_tojsonlist(a):
 
 
 # 获得所有试卷信息-首页
+@csrf_exempt
 def paper(request):
     if request.method == 'POST':
         PaperList = []
@@ -126,6 +128,7 @@ def paper(request):
 
 
 # 获得所有试题信息-试题库页面-已测试
+@csrf_exempt
 def question(request):
     if request.method == 'POST':
         QuestionInfo = Question.objects.all()
@@ -135,8 +138,40 @@ def question(request):
         print(QuestionList)
     return JsonResponse(QuestionList, safe=False)
 
+@csrf_exempt
+def add_subject(request):
+    res_data = {'isOK': False, 'errmsg': '未知错误'}
+    if request.method=='POST':
+        subject = request.POST.get('subject')
+        knowledge1 = request.POST.get('konwledge1')
+        knowledge2 = request.POST.get('knowledge2')
+        if subject and knowledge1 and knowledge2:
+            subject_obj = Subject.objects.filter(subject=subject)
+            if subject_obj.exists():
+                pass
+            else:
+                print("新增科目", subject)
+                Subject.objects.create(subject=subject).save()
+            subject_id = Subject.objects.get(subject=subject).id
+
+            knowledge1_obj = Knowledge1.objects.filter(knowledge1=knowledge1)
+            if knowledge1_obj.exists():
+                pass
+            else:
+                print("新增一级知识点", knowledge1, subject)
+                Knowledge1.objects.create(knowledge1=knowledge1, subject_id=subject_id).save()
+            knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
+            print("新增二级知识点", knowledge2, knowledge1)
+            Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
+            res_data['isOK']=True
+        else:
+            res_data['errmsg']='存在空值'
+    return JsonResponse(res_data)
+
+
 
 # 录入试题存入数据库 - 未测试
+@csrf_exempt
 def enter_questions(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -191,7 +226,7 @@ def enter_questions(request):
             if knowledge2_obj.exists():
                 pass
             else:
-                print("新增一级知识点", knowledge2, knowledge1)
+                print("新增二级知识点", knowledge2, knowledge1)
                 Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
             knowledge2_id = Knowledge1.objects.get(knowledge2=knowledge2).id
 
@@ -218,6 +253,7 @@ def enter_questions(request):
 
 
 # 为前端级联选择器构造学科-一级知识点-二级知识点的数据格式
+@csrf_exempt
 def cascader():
     cascaderlist = []
     subjectlist = Subject.objects.all()
@@ -253,6 +289,7 @@ def cascader():
 
 
 # 进入录入试题页面-获得所有的下拉列表信息-已测试
+@csrf_exempt
 def get_enterquestionpage(request):
     if request.method == 'POST':
         res_data = {'isOK': False, 'grade': 'null', 'school': 'null', 'subjectall': 'null'}
@@ -276,6 +313,7 @@ def get_enterquestionpage(request):
 # 手动 自动组卷用 -已测试
 # 输入试卷名称 学校等信息 存入试卷表中，也就是试卷的title
 # 前端数据格式为 {'name':'xxx','points':'xxx','user':'xxx','school':'xxx','grade':'xxx','subject':'xxx'}
+@csrf_exempt
 def postpaperinfo(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -300,6 +338,7 @@ def postpaperinfo(request):
 
 # 手动组卷用，根据试题的筛选条件 返回试卷等信息 -已测试
 # 前端所传递数据格式为{'grade':'xxx','subject':'xxx','knowledge1':'xxx','knowledge2':'xxx','difficult':'xxx','types':'xxx'}
+@csrf_exempt
 def getmanualpaperquestion(request):
     res_data = {'isOK': False, 'errmsg': '未知错误', 'questionlist': 'null'}
     if request.method == 'POST':
@@ -349,7 +388,7 @@ def getmanualpaperquestion(request):
 #     ]
 # }
 # 还要做查重-未做
-
+@csrf_exempt
 def loadpaper(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -385,6 +424,7 @@ def loadpaper(request):
 
 
 # 未测试 根据所给科目 年级 难度系数 选择题数量 填空题数量 判断题数量 解答题数量 返回题目列表
+@csrf_exempt
 def getautopaper(request):
     res_data = {'isOK': False, 'errmsg': '未知错误', 'questionlist': 'null', 'choice_q': 'null', 'filling_q': 'null',
                 'solve_q': 'null', 'tf_q': 'null'}
@@ -474,6 +514,7 @@ def getautopaper(request):
 
 
 # 进入每一个试卷详情页 查看题目、试卷信息 -已测试
+@csrf_exempt
 def paper_detail(request, paper_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误', 'paperinfo': 'null', 'question_list': 'null'}
     if request.method == 'POST':
@@ -528,6 +569,7 @@ def paper_detail(request, paper_id=0):
 
 
 # 点击题库列表页面上修改按钮-进入问题详情页，看到具体信息- 已测试
+@csrf_exempt
 def question_detail(request, question_id):
     res_data = {'isOK': False, 'errmsg': '未知错误', 'question_info': 'null'}
     if request.method == 'POST':
@@ -542,6 +584,7 @@ def question_detail(request, question_id):
 
 
 # 修改问题 进入每一个问题的详情页 -点击问题详情页确认修改的提交按钮 -未测试
+@csrf_exempt
 def alter_question(request, question_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -630,6 +673,7 @@ def alter_question(request, question_id=0):
 
 
 # 删除问题 -已测试
+@csrf_exempt
 def delete_question(request, question_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -644,6 +688,7 @@ def delete_question(request, question_id=0):
 
 # 传来的formdata格式为 name points user school grade subject
 # 试卷题头的修改 -已测试
+@csrf_exempt
 def alter_paper(request, paper_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -668,6 +713,7 @@ def alter_paper(request, paper_id=0):
 
 # 传来的格式为formdata paper_id=x，point=x
 # 再点击进入试卷详情页时，每一个试题可以修改分数，点击每个试题旁的修改按钮即可-已测试
+@csrf_exempt
 def alter_point(request, question_id):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -685,6 +731,7 @@ def alter_point(request, question_id):
 
 # 传来的格式为{’paper_id‘：’xx‘,questionlist:[1，2,3...]}
 # 试卷内题目的删除 多选 -已测试
+@csrf_exempt
 def delete_paperdetail(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -707,6 +754,7 @@ def delete_paperdetail(request):
 
 
 # 直接删除试卷 -已测试
+@csrf_exempt
 def delete_paper(request, paper_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
@@ -721,5 +769,6 @@ def delete_paper(request, paper_id=0):
 
 
 # 下载试卷 生成答案
+@csrf_exempt
 def downloadpaper(request):
     pass
