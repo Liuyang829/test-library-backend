@@ -1,11 +1,17 @@
 "# test-library-backend" 
 将该项目放置django环境文件夹下，修改以下配置文件
 
+为支持跨域访问
+pip install django-cors-headers
+
+
 在settings.py文件中修改
 
 在INSTALLED_APPS添加'test_library.apps.TestLibraryConfig'
 
-在MIDDLEWARE中注释 # 'django.middleware.csrf.CsrfViewMiddleware'
+在MIDDLEWARE中
+注释＃ 'django.middleware.csrf.CsrfViewMiddleware'
+添加'django.contrib.sessions.middleware.SessionMiddleware'，
 
 在DATABASES = {
     'default': {
