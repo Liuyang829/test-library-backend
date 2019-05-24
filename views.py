@@ -12,9 +12,10 @@ import json
 def index(request):
     return HttpResponse("Hello, world. You're at the test_library index.")
 
+
 @csrf_exempt
 def login(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误','data':'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'data': 'null'}
     if request.method == 'POST':
         # data=request.POST
         username = request.POST.get('username', None)
@@ -36,7 +37,7 @@ def login(request):
                     print("okk")
                     res_data['isOK'] = True
                     res_data['errmsg'] = '登陆成功'
-                    res_data['data']=username
+                    res_data['data'] = username
                 else:
                     print("密码错误")
                     res_data['errmsg'] = '密码错误'
@@ -47,6 +48,7 @@ def login(request):
             print("账号或密码为空")
             res_data['errmsg'] = '账号或密码为空'
     return JsonResponse(res_data)
+
 
 @csrf_exempt
 def register(request):
@@ -78,10 +80,11 @@ def register(request):
 def paperlist_tojson(a):
     PaperList = []
     for i in a:
-        PaperData_each = {'id': 'null', 'name': 'null', 'points':'null','subject': 'null', 'grade': 'null', 'school': 'null'}
+        PaperData_each = {'id': 'null', 'name': 'null', 'points': 'null', 'subject': 'null', 'grade': 'null',
+                          'school': 'null'}
         PaperData_each['id'] = i.id
         PaperData_each['name'] = i.name
-        PaperData_each['points']=i.points
+        PaperData_each['points'] = i.points
         PaperData_each['subject'] = Subject.objects.get(id=i.subject_id).subject
         PaperData_each['grade'] = Grade.objects.get(id=i.grade_id).grade
         PaperData_each['school'] = School.objects.get(id=i.school_id).school
@@ -140,14 +143,15 @@ def question(request):
         print(QuestionList)
     return JsonResponse(QuestionList, safe=False)
 
+
 @csrf_exempt
 def add_subject(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
-    if request.method=='POST':
+    if request.method == 'POST':
         subject = request.POST.get('subject')
         knowledge1 = request.POST.get('knowledge1')
         knowledge2 = request.POST.get('knowledge2')
-        print(subject,knowledge1,knowledge2)
+        print(subject, knowledge1, knowledge2)
         if subject and knowledge1 and knowledge2:
             subject_obj = Subject.objects.filter(subject=subject)
             if subject_obj.exists():
@@ -166,11 +170,10 @@ def add_subject(request):
             knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
             print("新增二级知识点", knowledge2, knowledge1)
             Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
-            res_data['isOK']=True
+            res_data['isOK'] = True
         else:
-            res_data['errmsg']='存在空值'
+            res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
-
 
 
 # 录入试题存入数据库 - 已测试
@@ -232,7 +235,7 @@ def enter_questions(request):
                 print("新增二级知识点", knowledge2, knowledge1)
                 Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
             knowledge2_id = Knowledge2.objects.get(knowledge2=knowledge2).id
-            print(subject_id,knowledge1_id,knowledge2_id)
+            print(subject_id, knowledge1_id, knowledge2_id)
             if types == '选择题':
                 if option1 and option2 and option3 and option4:
                     Question.objects.create(text=text, types=types, option1=option1, option2=option2, option3=option3,
@@ -259,19 +262,27 @@ def enter_questions(request):
 @csrf_exempt
 def cascader():
     cascaderlist = []
+    cascaderlist2 = []
     subjectlist = Subject.objects.all()
     for subject in subjectlist:
         subject_json = {'value': 'null', 'label': 'null', 'children': 'null'}
+        subject_json2 = {'value': 'null', 'label': 'null', 'children': 'null'}
         subject_children = []
+        subject_children2 = []
         subject_json['value'] = subject.subject
         subject_json['label'] = subject.subject
+        subject_json2['value'] = subject.subject
+        subject_json2['label'] = subject.subject
         subject_id = Subject.objects.get(subject=subject).id
         knowledge1list = Knowledge1.objects.filter(subject_id=subject_id)
         for knowledge1 in knowledge1list:
             knowledge1_json = {'value': 'null', 'label': 'null', 'children': 'null'}
+            knowledge1_json2 = {'value': 'null', 'label': 'null'}
             knowledge1_children = []
             knowledge1_json['value'] = knowledge1.knowledge1
             knowledge1_json['label'] = knowledge1.knowledge1
+            knowledge1_json2['value'] = knowledge1.knowledge1
+            knowledge1_json2['label'] = knowledge1.knowledge1
             knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
             knowledge2list = Knowledge2.objects.filter(knowledge1_id=knowledge1_id)
             for knowledge2 in knowledge2list:
@@ -281,43 +292,48 @@ def cascader():
                 knowledge1_children.append(knowledge2_json)
             knowledge1_json['children'] = knowledge1_children
             subject_children.append(knowledge1_json)
+            subject_children2.append(knowledge1_json2)
         subject_json['children'] = subject_children
+        subject_json2['children'] = subject_children2
+        cascaderlist2.append(subject_json2)
         cascaderlist.append(subject_json)
-        print(cascaderlist)
-    return cascaderlist
+    print(cascaderlist,cascaderlist2)
+    return cascaderlist,cascaderlist2
 
-def subject_knowledge1():
-    cascaderlist = []
-    subjectlist = Subject.objects.all()
-    for subject in subjectlist:
-        subject_json = {'value': 'null', 'label': 'null', 'children': 'null'}
-        subject_children = []
-        subject_json['value'] = subject.subject
-        subject_json['label'] = subject.subject
-        subject_id = Subject.objects.get(subject=subject).id
-        knowledge1list = Knowledge1.objects.filter(subject_id=subject_id)
-        for knowledge1 in knowledge1list:
-            knowledge1_json = {'value': 'null', 'label': 'null'}
-            knowledge1_json['value'] = knowledge1.knowledge1
-            knowledge1_json['label'] = knowledge1.knowledge1
-            subject_children.append(knowledge1_json)
-        subject_json['children'] = subject_children
-        cascaderlist.append(subject_json)
-        print(cascaderlist)
-    return cascaderlist
+
+# def subject_knowledge1():
+#     cascaderlist = []
+#     subjectlist = Subject.objects.all()
+#     for subject in subjectlist:
+#         subject_json = {'value': 'null', 'label': 'null', 'children': 'null'}
+#         subject_children = []
+#         subject_json['value'] = subject.subject
+#         subject_json['label'] = subject.subject
+#         subject_id = Subject.objects.get(subject=subject).id
+#         knowledge1list = Knowledge1.objects.filter(subject_id=subject_id)
+#         for knowledge1 in knowledge1list:
+#             knowledge1_json = {'value': 'null', 'label': 'null'}
+#             knowledge1_json['value'] = knowledge1.knowledge1
+#             knowledge1_json['label'] = knowledge1.knowledge1
+#             subject_children.append(knowledge1_json)
+#         subject_json['children'] = subject_children
+#         cascaderlist.append(subject_json)
+#         print(cascaderlist)
+#     return cascaderlist
 
 
 # 进入录入试题页面-获得所有的下拉列表信息-已测试
 @csrf_exempt
 def get_enterquestionpage(request):
     if request.method == 'POST':
-        res_data = {'isOK': False, 'grade': 'null', 'school': 'null', 'subject':'null','subjectall': 'null','subject_know1':'null'}
+        res_data = {'isOK': False, 'grade': 'null', 'school': 'null', 'subject': 'null', 'subjectall': 'null',
+                    'subject_know1': 'null'}
         gradelist = []
         schoollist = []
-        subjectlist= []
+        subjectlist = []
         GradeData = Grade.objects.all()
         SchoolData = School.objects.all()
-        SubjectData=Subject.objects.all()
+        SubjectData = Subject.objects.all()
 
         for i in GradeData:
             gradelist.append(i.grade)
@@ -328,9 +344,10 @@ def get_enterquestionpage(request):
         res_data['isOK'] = True
         res_data['grade'] = gradelist
         res_data['school'] = schoollist
-        res_data['subject']=subjectlist
-        res_data['subjectall'] = cascader()
-        res_data['subject_know1']=subject_knowledge1()
+        res_data['subject'] = subjectlist
+        subjectall,subject_know1=cascader()
+        res_data['subjectall'] = subjectall
+        res_data['subject_know1'] = subject_know1
     return JsonResponse(res_data)
 
 
@@ -339,7 +356,7 @@ def get_enterquestionpage(request):
 # 前端数据格式为 {'name':'xxx','points':'xxx','user':'xxx','school':'xxx','grade':'xxx','subject':'xxx'}
 @csrf_exempt
 def postpaperinfo(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误','paper_id':'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'paper_id': 'null'}
     if request.method == 'POST':
         name = request.POST.get('name')
         points = request.POST.get('points')
@@ -354,8 +371,8 @@ def postpaperinfo(request):
             subject_id = Subject.objects.get(subject=subject).id
             Paper.objects.create(name=name, points=points, grade_id=grade_id, school_id=school_id, user=user,
                                  subject_id=subject_id).save()
-            paper_id=Paper.objects.filter(name=name).id
-            res_data['paper_id']=paper_id
+            paper_id = Paper.objects.filter(name=name).id
+            res_data['paper_id'] = paper_id
             res_data['isOK'] = True
         else:
             res_data['errmsg'] = '存在空值'
@@ -396,6 +413,7 @@ def getmanualpaperquestion(request):
         else:
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
+
 
 # 手动、自动通用
 # 组卷根据选择的题目存到试卷内容表中 -已测试
