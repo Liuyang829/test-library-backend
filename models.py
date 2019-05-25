@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.db import models
-
+from DjangoUeditor.models import UEditorField
+import datetime
 
 # Create your models here.
 
@@ -73,15 +74,10 @@ class Question(models.Model):
         (1, 1),
         (2, 2),
         (3, 3),
-        (4, 4),
-        (5, 5)
     )
-    text = models.CharField('题目内容', max_length=300)
+    # aaa=UEditorField(,width=600, height=300, toolbars="full", imagePath="images/", filePath="files/", upload_settings={"imageMaxSize":1204000},settings={}, verbose_name='内容')
+    text = models.TextField('题目内容')
     types = models.CharField('题目类型', max_length=30, choices=TYPES_CHOICES)
-    option1 = models.CharField('A', max_length=50, null=True, blank=True,default='null')
-    option2 = models.CharField('B', max_length=50, null=True, blank=True,default='null')
-    option3 = models.CharField('C', max_length=50, null=True, blank=True,default='null')
-    option4 = models.CharField('D', max_length=50, null=True, blank=True,default='null')
     subject = models.ForeignKey('Subject', null=True, blank=True, on_delete=models.SET_NULL)
     grade = models.ForeignKey('Grade', null=True, blank=True, on_delete=models.SET_NULL)
     # 外键有问题
@@ -89,9 +85,7 @@ class Question(models.Model):
     knowledge2 = models.ForeignKey(Knowledge2, null=True, blank=True, on_delete=models.SET_NULL)
     school = models.ForeignKey(School, null=True, blank=True, on_delete=models.SET_NULL)
     difficult = models.IntegerField('难度系数', default=0, choices=DIFF_CHOICES)
-    answer = models.CharField('答案', max_length=300)
-    photo = models.CharField('图片', max_length=50, null=True, blank=True)
-    formula = models.CharField('公式', max_length=50, null=True, blank=True)
+    answer = models.TextField('答案')
     user= models.CharField('录人员', default=0,max_length=50)
 
     def __str__(self):
@@ -114,3 +108,7 @@ class Paper_detail(models.Model):
     paper = models.ForeignKey(Paper, null=True, blank=True, on_delete=models.SET_NULL)
     question = models.ForeignKey(Question, null=True, blank=True, on_delete=models.SET_NULL)
     point=models.IntegerField('分数',default=0)
+
+class Img(models.Model):
+    img_url = models.ImageField(upload_to='img') # upload_to指定图片上传的途径，如果不存在则自动创建
+    create_time = models.DateTimeField(auto_now_add=True, null=True)

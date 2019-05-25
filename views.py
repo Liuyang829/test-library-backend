@@ -4,7 +4,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
-from .models import Grade, Subject, User, Question, Paper, Paper_detail, Knowledge1, Knowledge2, School
+from .models import Img, Grade, Subject, User, Question, Paper, Paper_detail, Knowledge1, Knowledge2, School
 import random
 import json
 
@@ -97,21 +97,14 @@ def paperlist_tojson(a):
 def questionlist_tojsonlist(a):
     QuestionList = []
     for i in a:
-        QuestionData_each = {'id': 'null', 'text': 'null', 'types': 'null', 'option1': 'null', 'option2': 'null',
-                             'option3': 'null', 'option4': 'null', 'difficult': 'null', 'answer': 'null',
-                             'photo': 'null', 'formula': 'null', 'grade': 'null', 'knowledge1': 'null',
+        QuestionData_each = {'id': 'null', 'text': 'null', 'types': 'null',  'difficult': 'null', 'answer': 'null',
+                              'grade': 'null', 'knowledge1': 'null',
                              'knowledge2': 'null', 'school': 'null', 'school_info': 'null', 'subject': 'null'}
         QuestionData_each['id'] = i.id
         QuestionData_each['text'] = i.text
         QuestionData_each['types'] = i.types
-        QuestionData_each['option1'] = i.option1
-        QuestionData_each['option2'] = i.option2
-        QuestionData_each['option3'] = i.option3
-        QuestionData_each['option4'] = i.option4
         QuestionData_each['difficult'] = i.difficult
         QuestionData_each['answer'] = i.answer
-        QuestionData_each['photo'] = i.photo
-        QuestionData_each['formula'] = i.formula
         QuestionData_each['grade'] = Grade.objects.get(id=i.grade_id).grade
         QuestionData_each['knowledge1'] = Knowledge1.objects.get(id=i.knowledge1_id).knowledge1
         QuestionData_each['knowledge2'] = Knowledge2.objects.get(id=i.knowledge2_id).knowledge2
@@ -143,13 +136,14 @@ def question(request):
         print(QuestionList)
     return JsonResponse(QuestionList, safe=False)
 
+
 @csrf_exempt
 def add_school(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误','school':'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'school': 'null'}
     if request.method == 'POST':
         school = request.POST.get('school')
         school_info = request.POST.get('school_info')  # 新增学校需提交新增学校信息
-        print(school,school_info)
+        print(school, school_info)
         if school and school_info:
             school_obj = School.objects.filter(school=school)
             if school_obj.exists():
@@ -157,9 +151,9 @@ def add_school(request):
             else:
                 print("新增学校", school, school_info)
                 School.objects.create(school=school, school_info=school_info).save()
-                res_data['isOK']=True
+                res_data['isOK'] = True
         else:
-            res_data['errmsg']='存在空值'
+            res_data['errmsg'] = '存在空值'
         schoollist = []
         SchoolData = School.objects.all()
         for i in SchoolData:
@@ -167,9 +161,10 @@ def add_school(request):
         res_data['school'] = schoollist
     return JsonResponse(res_data)
 
+
 @csrf_exempt
 def add_subject(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误','subjectall':'null','subject_know1': 'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'subjectall': 'null', 'subject_know1': 'null'}
     if request.method == 'POST':
         subject = request.POST.get('subject')
         knowledge1 = request.POST.get('knowledge1')
@@ -194,9 +189,9 @@ def add_subject(request):
             print("新增二级知识点", knowledge2, knowledge1)
             Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
             res_data['isOK'] = True
-            subjectall,subjectall1=cascader()
-            res_data['subjectall']=subjectall
-            res_data['subject_know1']=subjectall1
+            subjectall, subjectall1 = cascader()
+            res_data['subjectall'] = subjectall
+            res_data['subject_know1'] = subjectall1
         else:
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
@@ -209,14 +204,8 @@ def enter_questions(request):
     if request.method == 'POST':
         text = request.POST.get('text')
         types = request.POST.get('types')
-        option1 = request.POST.get('option1')
-        option2 = request.POST.get('option2')
-        option3 = request.POST.get('option3')
-        option4 = request.POST.get('option4')
         difficult = request.POST.get('difficult')
         answer = request.POST.get('answer')
-        photo = request.POST.get('photo')
-        formula = request.POST.get('formula')
         user = request.POST.get('user')
         grade = request.POST.get('grade')
         subject = request.POST.get('subject')
@@ -262,29 +251,16 @@ def enter_questions(request):
                 Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
             knowledge2_id = Knowledge2.objects.get(knowledge2=knowledge2).id
             print(subject_id, knowledge1_id, knowledge2_id)
-            if types == '选择题':
-                if option1 and option2 and option3 and option4:
-                    Question.objects.create(text=text, types=types, option1=option1, option2=option2, option3=option3,
-                                            option4=option4, difficult=difficult, answer=answer, photo=photo,
-                                            formula=formula, user=user, grade_id=grade_id, knowledge1_id=knowledge1_id,
-                                            knowledge2_id=knowledge2_id, school_id=school_id,
-                                            subject_id=subject_id).save()
-                    res_data['isOK'] = True
-                else:
-                    print("选择题选项不可为空")
-                    res_data['errmsg'] = '选择题选项不可为空'
-            else:
-                Question.objects.create(text=text, types=types, difficult=difficult, answer=answer, photo=photo,
-                                        formula=formula, user=user, grade_id=grade_id, knowledge1_id=knowledge1_id,
+            Question.objects.create(text=text, types=types, difficult=difficult, answer=answer, user=user, grade_id=grade_id, knowledge1_id=knowledge1_id,
                                         knowledge2_id=knowledge2_id, school_id=school_id, subject_id=subject_id).save()
-                res_data['isOK'] = True
+            res_data['isOK'] = True
         else:
             print("不可为空值")
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
 
 
-# 为前端级联选择器构造学科-一级知识点-二级知识点的数据格式
+# 为前端级联选择器构造学科-一级知识点-二级知识点的数据格式 还有两级知识点的级联选择器
 @csrf_exempt
 def cascader():
     cascaderlist = []
@@ -323,29 +299,8 @@ def cascader():
         subject_json2['children'] = subject_children2
         cascaderlist2.append(subject_json2)
         cascaderlist.append(subject_json)
-    print(cascaderlist,cascaderlist2)
-    return cascaderlist,cascaderlist2
-
-
-# def subject_knowledge1():
-#     cascaderlist = []
-#     subjectlist = Subject.objects.all()
-#     for subject in subjectlist:
-#         subject_json = {'value': 'null', 'label': 'null', 'children': 'null'}
-#         subject_children = []
-#         subject_json['value'] = subject.subject
-#         subject_json['label'] = subject.subject
-#         subject_id = Subject.objects.get(subject=subject).id
-#         knowledge1list = Knowledge1.objects.filter(subject_id=subject_id)
-#         for knowledge1 in knowledge1list:
-#             knowledge1_json = {'value': 'null', 'label': 'null'}
-#             knowledge1_json['value'] = knowledge1.knowledge1
-#             knowledge1_json['label'] = knowledge1.knowledge1
-#             subject_children.append(knowledge1_json)
-#         subject_json['children'] = subject_children
-#         cascaderlist.append(subject_json)
-#         print(cascaderlist)
-#     return cascaderlist
+    print(cascaderlist, cascaderlist2)
+    return cascaderlist, cascaderlist2
 
 
 # 进入录入试题页面-获得所有的下拉列表信息-已测试
@@ -360,7 +315,6 @@ def get_enterquestionpage(request):
         GradeData = Grade.objects.all()
         SchoolData = School.objects.all()
         SubjectData = Subject.objects.all()
-
         for i in GradeData:
             gradelist.append(i.grade)
         for i in SchoolData:
@@ -371,7 +325,7 @@ def get_enterquestionpage(request):
         res_data['grade'] = gradelist
         res_data['school'] = schoollist
         res_data['subject'] = subjectlist
-        subjectall,subject_know1=cascader()
+        subjectall, subject_know1 = cascader()
         res_data['subjectall'] = subjectall
         res_data['subject_know1'] = subject_know1
     return JsonResponse(res_data)
@@ -607,23 +561,16 @@ def paper_detail(request, paper_id=0):
                 j = Question.objects.filter(id=question_id).first()
                 # print(j.id,j.text)
                 # 这里返回的试题list需要分数，不能用那个函数
-                QuestionData_each = {'id': 'null', 'text': 'null', 'point': 'null', 'types': 'null', 'option1': 'null',
-                                     'option2': 'null', 'option3': 'null', 'option4': 'null', 'difficult': 'null',
-                                     'answer': 'null', 'photo': 'null', 'formula': 'null', 'grade': 'null',
+                QuestionData_each = {'id': 'null', 'text': 'null', 'point': 'null', 'types': 'null','difficult': 'null',
+                                     'answer': 'null', 'grade': 'null',
                                      'knowledge1': 'null', 'knowledge2': 'null', 'school': 'null',
                                      'school_info': 'null', 'subject': 'null'}
                 QuestionData_each['id'] = j.id
                 QuestionData_each['text'] = j.text
                 QuestionData_each['point'] = i.point
                 QuestionData_each['types'] = j.types
-                QuestionData_each['option1'] = j.option1
-                QuestionData_each['option2'] = j.option2
-                QuestionData_each['option3'] = j.option3
-                QuestionData_each['option4'] = j.option4
                 QuestionData_each['difficult'] = j.difficult
                 QuestionData_each['answer'] = j.answer
-                QuestionData_each['photo'] = j.photo
-                QuestionData_each['formula'] = j.formula
                 QuestionData_each['grade'] = Grade.objects.get(id=j.grade_id).grade
                 QuestionData_each['knowledge1'] = Knowledge1.objects.get(id=j.knowledge1_id).knowledge1
                 QuestionData_each['knowledge2'] = Knowledge2.objects.get(id=j.knowledge2_id).knowledge2
@@ -661,14 +608,8 @@ def alter_question(request, question_id=0):
         # q=Question.objects.filter(id=question_id).first().id
         text = request.POST.get('text')
         types = request.POST.get('types')
-        option1 = request.POST.get('option1')
-        option2 = request.POST.get('option2')
-        option3 = request.POST.get('option3')
-        option4 = request.POST.get('option4')
         difficult = request.POST.get('difficult')
         answer = request.POST.get('answer')
-        photo = request.POST.get('photo')
-        formula = request.POST.get('formula')
         user = request.POST.get('user')
         grade = request.POST.get('grade')
         knowledge1 = request.POST.get('knowledge1')
@@ -713,29 +654,12 @@ def alter_question(request, question_id=0):
                 print("新增一级知识点", knowledge2, knowledge1)
                 Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
             knowledge2_id = Knowledge2.objects.get(knowledge2=knowledge2).id
-
-            if text == '选择题':
-                if option1 and option2 and option3 and option4:
-                    Question.objects.filter(id=question_id).update(text=text, types=types, option1=option1,
-                                                                   option2=option2, option3=option3,
-                                                                   option4=option4, difficult=difficult, answer=answer,
-                                                                   photo=photo, formula=formula, user=user,
-                                                                   grade_id=grade_id,
-                                                                   knowledge1_id=knowledge1_id,
-                                                                   knowledge2_id=knowledge2_id, school_id=school_id,
-                                                                   subject_id=subject_id)
-                    res_data['isOK'] = True
-                else:
-                    print("选择题选项不可为空")
-                    res_data['errmsg'] = '选择题选项不可为空'
-            else:
-                Question.objects.filter(id=question_id).update(text=text, types=types, difficult=difficult,
-                                                               answer=answer, photo=photo,
-                                                               formula=formula, user=user, grade_id=grade_id,
-                                                               knowledge1_id=knowledge1_id,
-                                                               knowledge2_id=knowledge2_id, school_id=school_id,
-                                                               subject_id=subject_id)
-                res_data['isOK'] = True
+            Question.objects.filter(id=question_id).update(text=text, types=types, difficult=difficult,
+                                                           answer=answer, user=user, grade_id=grade_id,
+                                                           knowledge1_id=knowledge1_id,
+                                                           knowledge2_id=knowledge2_id, school_id=school_id,
+                                                           subject_id=subject_id)
+            res_data['isOK'] = True
         else:
             print("不可为空值")
             res_data['errmsg'] = '存在空值'
@@ -835,6 +759,17 @@ def delete_paper(request, paper_id=0):
             res_data['isOK'] = True
         else:
             res_data['errmsg'] = '所选试卷为空'
+    return JsonResponse(res_data)
+
+
+def uploadImg(request):  # 图片上传函数
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'image': 'null'}
+    if request.method == 'POST':
+        img = Img(img_url=request.FILES.get('file'))
+        img.save()
+        res_data['image'] = str(img.img_url)
+        res_data['isOK'] = True
+        print(res_data)
     return JsonResponse(res_data)
 
 

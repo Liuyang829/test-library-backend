@@ -33,8 +33,8 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     search_fields = ['text','types','subject','grade','school','difficult','user']
-    list_display = ['text','types','option1','option2','option3','option4','subject','grade','knowledge1','knowledge2','school','difficult','answer','photo','formula','user']
-    list_display_links = ['text','types','option1','option2','option3','option4','subject','grade','knowledge1','knowledge2','school','difficult','answer','photo','formula','user']
+    list_display = ['text','types','subject','grade','knowledge1','knowledge2','school','difficult','answer','user']
+    list_display_links = ['text','types','subject','grade','knowledge1','knowledge2','school','difficult','answer','user']
 
 @admin.register(Paper)
 class PaperAdmin(admin.ModelAdmin):
