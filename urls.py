@@ -9,6 +9,7 @@ urlpatterns = [
     path(r'paper/',views.paper,name='paper'),
     path(r'question/',views.question,name='question'),
     path(r'enter_question/',views.enter_questions,name='enter_question'),
+    path(r'add_school/',views.add_school,name='add_school'),
     path(r'add_subject/',views.add_subject,name='add_subject'),
     path(r'get_enterquestionpage/',views.get_enterquestionpage,name='get_enterquestionpage'),
     path(r'postpaperinfo/',views.postpaperinfo,name='postpaperinfo'),

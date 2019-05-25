@@ -143,10 +143,33 @@ def question(request):
         print(QuestionList)
     return JsonResponse(QuestionList, safe=False)
 
+@csrf_exempt
+def add_school(request):
+    res_data = {'isOK': False, 'errmsg': '未知错误','school':'null'}
+    if request.method == 'POST':
+        school = request.POST.get('school')
+        school_info = request.POST.get('school_info')  # 新增学校需提交新增学校信息
+        print(school,school_info)
+        if school and school_info:
+            school_obj = School.objects.filter(school=school)
+            if school_obj.exists():
+                pass
+            else:
+                print("新增学校", school, school_info)
+                School.objects.create(school=school, school_info=school_info).save()
+                res_data['isOK']=True
+        else:
+            res_data['errmsg']='存在空值'
+        schoollist = []
+        SchoolData = School.objects.all()
+        for i in SchoolData:
+            schoollist.append(i.school)
+        res_data['school'] = schoollist
+    return JsonResponse(res_data)
 
 @csrf_exempt
 def add_subject(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误'}
+    res_data = {'isOK': False, 'errmsg': '未知错误','subjectall':'null','subject_know1': 'null'}
     if request.method == 'POST':
         subject = request.POST.get('subject')
         knowledge1 = request.POST.get('knowledge1')
@@ -171,6 +194,9 @@ def add_subject(request):
             print("新增二级知识点", knowledge2, knowledge1)
             Knowledge2.objects.create(knowledge2=knowledge2, knowledge1_id=knowledge1_id).save()
             res_data['isOK'] = True
+            subjectall,subjectall1=cascader()
+            res_data['subjectall']=subjectall
+            res_data['subject_know1']=subjectall1
         else:
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
