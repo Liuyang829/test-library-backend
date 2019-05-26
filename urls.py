@@ -29,6 +29,4 @@ urlpatterns = [
     path(r'delete_paperdetail/',views.delete_paperdetail,name='delete_paperdetail'),
     path(r'cascader/',views.cascader,name='cascader'),
     path(r'uploadImg/',views.uploadImg,name='uploagImg')
-
-
 ]

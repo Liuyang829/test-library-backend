@@ -38,3 +38,21 @@ python manage.py makemigrations
 python manage.py migrate
 
 生成数据库
+
+配置上传图片操作：
+
+首先需 pip install Pillow
+
+在django环境下的settings中配置
+添加
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/') # media即为图片上传的根路径
+MEDIA_URL = '/media/'
+
+在django环境下urls中配置
+
+from testdjango(django环境文件夹名) import settings
+在最后 加上代码
++ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+在django环境同级文件夹目录下新建文件夹 media 在里面新建文件夹 img 用来保存图片，上传的图片即保存至该目录下
