@@ -341,7 +341,7 @@ def get_enterquestionpage(request):
 # 前端数据格式为 {'name':'xxx','points':'xxx','user':'xxx','school':'xxx','grade':'xxx','subject':'xxx'}
 @csrf_exempt
 def postpaperinfo(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误', 'paper_id': 'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'paper_id': 'null','knowlede1':'null'}
     if request.method == 'POST':
         name = request.POST.get('name')
         points = request.POST.get('points')
@@ -355,10 +355,15 @@ def postpaperinfo(request):
             school_id = School.objects.get(school=school).id
             grade_id = Grade.objects.get(grade=grade).id
             subject_id = Subject.objects.get(subject=subject).id
+            knowledge1 = Knowledge1.objects.filter(subject_id=subject_id)
+            knowledge1list=[]
+            for i in knowledge1:
+                knowledge1list.append(i.knowledge1)
             Paper.objects.create(name=name, points=points, grade_id=grade_id, school_id=school_id, user=user,
                                  subject_id=subject_id).save()
             paper_id = Paper.objects.get(name=name).id
             res_data['paper_id'] = paper_id
+            res_data['knowlede1']=knowledge1list
             res_data['isOK'] = True
         else:
             res_data['errmsg'] = '存在空值'
@@ -456,7 +461,7 @@ def loadpaper(request):
 # 未测试 根据所给科目 年级 难度系数 选择题数量 填空题数量 判断题数量 解答题数量 返回题目列表
 @csrf_exempt
 def getautopaper(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误', 'questionlist': 'null',
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'questionlist': 'null','questionidlist':'null',
                 'choice_q_e': 'null', 'choice_q_n': 'null','choice_q_d': 'null',
                 'filling_q_e': 'null', 'filling_q_n': 'null','filling_q_d': 'null',
                 'solve_q_e': 'null', 'solve_q_n': 'null', 'solve_q_d': 'null',
@@ -465,17 +470,27 @@ def getautopaper(request):
     if request.method == 'POST':
         grade = request.POST.get('grade')
         subject = request.POST.get('subject')
-        easy=request.POST.get('easy')
-        normal=request.POST.get('normal')
-        difficult=request.POST.get('difficult')
+        easy1=request.POST.get('easy')
+        normal1=request.POST.get('normal')
+        difficult1=request.POST.get('difficult')
         choice_question_num = request.POST.get('choice_qusetion_num')
         tf_question_num = request.POST.get('tf_qusetion_num')
         filling_question_num = request.POST.get('filling_qusetion_num')
         solve_question_num = request.POST.get('solve_qusetion_num')
+        print(choice_question_num,type(choice_question_num))
+        easy1=int(easy1)
+        normal1=int(normal1)
+        difficult1=int(difficult1)
+        easy=easy1/(easy1+normal1+difficult1)
+        normal=normal1/(easy1+normal1+difficult1)
+        difficult=difficult1/(easy1+normal1+difficult1)
+        print(easy,normal,difficult)
+        print(choice_question_num,tf_question_num,filling_question_num,solve_question_num)
         if grade and subject and easy and normal and difficult:
             grade_id = Grade.objects.get(grade=grade).id
             subject_id = Subject.objects.get(subject=subject).id
-            if choice_question_num:
+            if choice_question_num!="undefined":
+                choice_question_num = int(choice_question_num)
                 choice_question_order_info_easy = Question.objects.filter(types="选择题",difficult=1,subject_id=subject_id,grade_id=grade_id)
                 choice_question_order_info_normal = Question.objects.filter(types="选择题", difficult=2,
                                                                           subject_id=subject_id, grade_id=grade_id)
@@ -488,65 +503,158 @@ def getautopaper(request):
                 choice_question_num_easy = int(choice_question_num * easy)
                 choice_question_num_normal = int(choice_question_num * normal)
                 choice_question_num_difficult = int(choice_question_num * difficult)
+                print(len(choice_question_list_easy))
                 if len(choice_question_list_easy) >= choice_question_num*easy:
                     choice_question_list_easy = random.sample(choice_question_list_easy, choice_question_num_easy)
                     res_data['choice_q_e'] = '选择题ok'
+                    for i in choice_question_list_easy:
+                        QuestionList.append(i)
                 else:
                     res_data['choice_q_e'] = '题库中没有那么多符合要求的简单选择题'
                 if len(choice_question_list_normal) >= choice_question_num*normal:
                     choice_question_list_normal = random.sample(choice_question_list_normal, choice_question_num_normal)
                     res_data['choice_q_n'] = '选择题ok'
+                    for i in choice_question_list_normal:
+                        QuestionList.append(i)
                 else:
                     res_data['choice_q_n'] = '题库中没有那么多符合要求的难度正常选择题'
                 if len(choice_question_list_difficult) >= choice_question_num*difficult:
                     choice_question_list_difficult = random.sample(choice_question_list_difficult, choice_question_num_difficult)
                     res_data['choice_q_d'] = '选择题ok'
+                    for i in choice_question_list_difficult:
+                        QuestionList.append(i)
                 else:
                     res_data['choice_q_d'] = '题库中没有那么多符合要求的困难选择题'
             else:
                 res_data['choice_q'] = '选择题信息有空值，无选择题'
 
-            # if tf_question_difficult and tf_question_num:
-            #     search_dict_tf['difficult'] = tf_question_difficult
-            #     tf_question_order_info = Question.objects.filter(**search_dict_tf)
-            #     tf_question_list = questionlist_tojsonlist(tf_question_order_info)
-            #     if len(tf_question_list) >= tf_question_num:
-            #         tf_question_list = random.sample(tf_question_list, tf_question_num)
-            #         res_data['tf_q'] = '判断题ok'
-            #     else:
-            #         res_data['tf_q'] = '题库中没有那么多符合要求的判断题'
-            #     QuestionList.append(tf_question_list)
-            # else:
-            #     res_data['tf_q'] = '判断题信息有空值，无判断题'
-            #
-            # if filling_question_difficult and filling_question_num:
-            #     search_dict_filling['difficult'] = filling_question_difficult
-            #     filling_question_order_info = Question.objects.filter(**search_dict_filling)
-            #     filling_question_list = questionlist_tojsonlist(filling_question_order_info)
-            #     if len(filling_question_list) >= filling_question_num:
-            #         filling_question_list = random.sample(filling_question_list, filling_question_num)
-            #         res_data['filling_q'] = '判断题ok'
-            #     else:
-            #         res_data['filling_q'] = '题库中没有那么多符合要求的判断题'
-            #     QuestionList.append(filling_question_list)
-            # else:
-            #     res_data['filling_q'] = '填空题信息有空值，无填空题'
-            #
-            # if solve_question_difficult and solve_question_num:
-            #     search_dict_solve['difficult'] = solve_question_difficult
-            #     solve_question_order_info = Question.objects.filter(**search_dict_solve)
-            #     solve_question_list = questionlist_tojsonlist(solve_question_order_info)
-            #     if len(solve_question_list) >= solve_question_num:
-            #         solve_question_list = random.sample(solve_question_list, solve_question_num)
-            #         res_data['solve_q'] = '判断题ok'
-            #     else:
-            #         res_data['solve_q'] = '题库中没有那么多符合要求的判断题'
-            #     QuestionList.append(solve_question_list)
-            # else:
-            #     res_data['solve_q'] = '解答题信息有空值,无解答题'
-            # res_data['isOK'] = True
+            if tf_question_num!="undefined":
+                tf_question_num = int(tf_question_num)
+                tf_question_order_info_easy = Question.objects.filter(types="判断题",difficult=1,subject_id=subject_id,grade_id=grade_id)
+                tf_question_order_info_normal = Question.objects.filter(types="判断题", difficult=2,
+                                                                          subject_id=subject_id, grade_id=grade_id)
+                tf_question_order_info_difficult = Question.objects.filter(types="判断题", difficult=3,
+                                                                          subject_id=subject_id, grade_id=grade_id)
+                # 利用questionlist_tojsonlist函数将查找到的所有内容转换成json后存进一个list
+                tf_question_list_easy = questionlist_tojsonlist(tf_question_order_info_easy)
+                tf_question_list_normal = questionlist_tojsonlist(tf_question_order_info_normal)
+                tf_question_list_difficult = questionlist_tojsonlist(tf_question_order_info_difficult)
+                tf_question_num_easy = int(tf_question_num * easy)
+                tf_question_num_normal = int(tf_question_num * normal)
+                tf_question_num_difficult = int(tf_question_num * difficult)
+                if len(tf_question_list_easy) >= tf_question_num*easy:
+                    tf_question_list_easy = random.sample(tf_question_list_easy, tf_question_num_easy)
+                    res_data['tf_q_e'] = '判断题ok'
+                    for i in tf_question_list_easy:
+                        QuestionList.append(i)
+                else:
+                    res_data['tf_q_e'] = '题库中没有那么多符合要求的简单判断题'
+                if len(tf_question_list_normal) >= tf_question_num*normal:
+                    tf_question_list_normal = random.sample(tf_question_list_normal, tf_question_num_normal)
+                    res_data['tf_q_n'] = '判断题ok'
+                    for i in tf_question_list_normal:
+                        QuestionList.append(i)
+                else:
+                    res_data['tf_q_n'] = '题库中没有那么多符合要求的难度正常判断题'
+                if len(tf_question_list_difficult) >= tf_question_num*difficult:
+                    tf_question_list_difficult = random.sample(tf_question_list_difficult, tf_question_num_difficult)
+                    res_data['tf_q_d'] = '判断题ok'
+                    for i in tf_question_list_difficult:
+                        QuestionList.append(i)
+                else:
+                    res_data['tf_q_d'] = '题库中没有那么多符合要求的困难判断题'
+            else:
+                res_data['tf_q'] = '判断题信息有空值，无判断题'
+
+            if solve_question_num!="undefined":
+                solve_question_num = int(solve_question_num)
+                solve_question_order_info_easy = Question.objects.filter(types="解答题",difficult=1,subject_id=subject_id,grade_id=grade_id)
+                solve_question_order_info_normal = Question.objects.filter(types="解答题", difficult=2,
+                                                                          subject_id=subject_id, grade_id=grade_id)
+                solve_question_order_info_difficult = Question.objects.filter(types="解答题", difficult=3,
+                                                                          subject_id=subject_id, grade_id=grade_id)
+                # 利用questionlist_tojsonlist函数将查找到的所有内容转换成json后存进一个list
+                solve_question_list_easy = questionlist_tojsonlist(solve_question_order_info_easy)
+                solve_question_list_normal = questionlist_tojsonlist(solve_question_order_info_normal)
+                solve_question_list_difficult = questionlist_tojsonlist(solve_question_order_info_difficult)
+                solve_question_num_easy = int(solve_question_num * easy)
+                solve_question_num_normal = int(solve_question_num * normal)
+                solve_question_num_difficult = int(solve_question_num * difficult)
+                if len(solve_question_list_easy) >= solve_question_num*easy:
+                    solve_question_list_easy = random.sample(solve_question_list_easy, solve_question_num_easy)
+                    res_data['solve_q_e'] = '解答题ok'
+                    for i in solve_question_list_easy:
+                        QuestionList.append(i)
+                else:
+                    res_data['solve_q_e'] = '题库中没有那么多符合要求的简单解答题'
+                if len(solve_question_list_normal) >= solve_question_num*normal:
+                    solve_question_list_normal = random.sample(solve_question_list_normal, solve_question_num_normal)
+                    res_data['solve_q_n'] = '解答题ok'
+                    for i in solve_question_list_normal:
+                        QuestionList.append(i)
+                else:
+                    res_data['solve_q_n'] = '题库中没有那么多符合要求的难度正常解答题'
+                if len(solve_question_list_difficult) >= solve_question_num*difficult:
+                    solve_question_list_difficult = random.sample(solve_question_list_difficult, solve_question_num_difficult)
+                    res_data['solve_q_d'] = '解答题ok'
+                    for i in solve_question_list_difficult:
+                        QuestionList.append(i)
+                else:
+                    res_data['solve_q_d'] = '题库中没有那么多符合要求的困难解答题'
+            else:
+                res_data['solve_q'] = '解答题信息有空值，无解答题'
+
+            if filling_question_num!="undefined":
+                filling_question_num = int(filling_question_num)
+                filling_question_order_info_easy = Question.objects.filter(types="填空题",difficult=1,subject_id=subject_id,grade_id=grade_id)
+                filling_question_order_info_normal = Question.objects.filter(types="填空题", difficult=2,
+                                                                          subject_id=subject_id, grade_id=grade_id)
+                filling_question_order_info_difficult = Question.objects.filter(types="填空题", difficult=3,
+                                                                          subject_id=subject_id, grade_id=grade_id)
+                # 利用questionlist_tojsonlist函数将查找到的所有内容转换成json后存进一个list
+                filling_question_list_easy = questionlist_tojsonlist(filling_question_order_info_easy)
+                filling_question_list_normal = questionlist_tojsonlist(filling_question_order_info_normal)
+                filling_question_list_difficult = questionlist_tojsonlist(filling_question_order_info_difficult)
+                filling_question_num_easy = int(filling_question_num * easy)
+                filling_question_num_normal = int(filling_question_num * normal)
+                filling_question_num_difficult = int(filling_question_num * difficult)
+                if len(filling_question_list_easy) >= filling_question_num*easy:
+                    filling_question_list_easy = random.sample(filling_question_list_easy, filling_question_num_easy)
+                    res_data['filling_q_e'] = '填空题ok'
+                    for i in filling_question_list_easy:
+                        QuestionList.append(i)
+                else:
+                    res_data['filling_q_e'] = '题库中没有那么多符合要求的简单填空题'
+                if len(filling_question_list_normal) >= filling_question_num*normal:
+                    filling_question_list_normal = random.sample(filling_question_list_normal, filling_question_num_normal)
+                    res_data['filling_q_n'] = '填空题ok'
+                    for i in filling_question_list_normal:
+                        QuestionList.append(i)
+                else:
+                    res_data['filling_q_n'] = '题库中没有那么多符合要求的难度正常填空题'
+                if len(filling_question_list_difficult) >= filling_question_num*difficult:
+                    filling_question_list_difficult = random.sample(filling_question_list_difficult, filling_question_num_difficult)
+                    res_data['filling_q_d'] = '填空题ok'
+                    for i in filling_question_list_difficult:
+                        QuestionList.append(i)
+                else:
+                    res_data['filling_q_d'] = '题库中没有那么多符合要求的困难填空题'
+            else:
+                res_data['filling_q'] = '填空题信息有空值，无填空题'
+            res_data['questionlist']=QuestionList
+            questionidlist=[]
+            for i in QuestionList:
+                each={'id':'null','types':'null'}
+                each['id']=i['id']
+                each['types']=i['types']
+                questionidlist.append(each)
+            print(questionidlist)
+            res_data['questionidlist']=questionidlist
+            if len(QuestionList)!=0:
+                res_data['isOK']=True
         else:
             res_data['errmsg'] = '年级与科目存在空值'
+        print(res_data)
     return JsonResponse(res_data)
 
 
