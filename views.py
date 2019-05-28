@@ -304,7 +304,6 @@ def cascader():
         subject_json2['children'] = subject_children2
         cascaderlist2.append(subject_json2)
         cascaderlist.append(subject_json)
-    print(cascaderlist, cascaderlist2)
     return cascaderlist, cascaderlist2
 
 
@@ -341,7 +340,7 @@ def get_enterquestionpage(request):
 # 前端数据格式为 {'name':'xxx','points':'xxx','user':'xxx','school':'xxx','grade':'xxx','subject':'xxx'}
 @csrf_exempt
 def postpaperinfo(request):
-    res_data = {'isOK': False, 'errmsg': '未知错误', 'paper_id': 'null','knowlede1':'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'paper_id': 'null','knowledge1':'null'}
     if request.method == 'POST':
         name = request.POST.get('name')
         points = request.POST.get('points')
@@ -355,16 +354,32 @@ def postpaperinfo(request):
             school_id = School.objects.get(school=school).id
             grade_id = Grade.objects.get(grade=grade).id
             subject_id = Subject.objects.get(subject=subject).id
-            knowledge1 = Knowledge1.objects.filter(subject_id=subject_id)
-            knowledge1list=[]
-            for i in knowledge1:
-                knowledge1list.append(i.knowledge1)
-            Paper.objects.create(name=name, points=points, grade_id=grade_id, school_id=school_id, user=user,
+            a=Paper.objects.filter(name=name)
+            if len(a)!=0 :
+                res_data['errmsg']="已有当前试卷，可进入试卷详情页进行修改"
+            else:
+                Paper.objects.create(name=name, points=points, grade_id=grade_id, school_id=school_id, user=user,
                                  subject_id=subject_id).save()
-            paper_id = Paper.objects.get(name=name).id
-            res_data['paper_id'] = paper_id
-            res_data['knowlede1']=knowledge1list
-            res_data['isOK'] = True
+                paper_id = Paper.objects.get(name=name).id
+                res_data['paper_id'] = paper_id
+                k12=[]
+                knowledge1list = Knowledge1.objects.filter(subject_id=subject_id)
+                for knowledge1 in knowledge1list:
+                    knowledge1_json = {'value': 'null', 'label': 'null', 'children': 'null'}
+                    knowledge1_children = []
+                    knowledge1_json['value'] = knowledge1.knowledge1
+                    knowledge1_json['label'] = knowledge1.knowledge1
+                    knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
+                    knowledge2list = Knowledge2.objects.filter(knowledge1_id=knowledge1_id)
+                    for knowledge2 in knowledge2list:
+                        knowledge2_json = {'value': 'null', 'label': 'null'}
+                        knowledge2_json['value'] = knowledge2.knowledge2
+                        knowledge2_json['label'] = knowledge2.knowledge2
+                        knowledge1_children.append(knowledge2_json)
+                    knowledge1_json['children'] = knowledge1_children
+                    k12.append(knowledge1_json)
+                res_data['knowledge1']=k12
+                res_data['isOK'] = True
         else:
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
@@ -378,23 +393,22 @@ def getmanualpaperquestion(request):
     if request.method == 'POST':
         grade = request.POST.get('grade')
         subject = request.POST.get('subject')
-        knowledge1 = request.POST.get('knowledge1')
+        # knowledge1 = request.POST.get('knowledge1')
         knowledge2 = request.POST.get('knowledge2')
         difficult = request.POST.get('difficult')
         types = request.POST.get('types')
         search_dict = dict()
-        search_dict['types'] = types
-        search_dict['difficult'] = difficult
-        if grade and subject and difficult and types and knowledge1:
+        if grade and subject and difficult and types and knowledge2!="undefined":
+            search_dict['types'] = types
+            search_dict['difficult'] = difficult
             grade_id = Grade.objects.get(grade=grade).id
             subject_id = Subject.objects.get(subject=subject).id
-            knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
+            # knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
             search_dict['grade_id'] = grade_id
             search_dict['subject_id'] = subject_id
-            search_dict['knowledge1_id'] = knowledge1_id
-            if knowledge2:
-                knowledge2_id = Knowledge2.objects.get(knowledge2=knowledge2).id
-                search_dict['knowledge2_id'] = knowledge2_id
+            # search_dict['knowledge1_id'] = knowledge1_id
+            knowledge2_id = Knowledge2.objects.get(knowledge2=knowledge2).id
+            search_dict['knowledge2_id'] = knowledge2_id
             question_order_info = Question.objects.filter(**search_dict)
             question_info = questionlist_tojsonlist(question_order_info)
             # 应该是只打印出了题目
@@ -422,7 +436,6 @@ def getmanualpaperquestion(request):
 #         },
 #     ]
 # }
-# 还要做查重-未做
 @csrf_exempt
 def loadpaper(request):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
@@ -432,25 +445,28 @@ def loadpaper(request):
 
         a = request.body.decode()
         b = json.loads(a)
-        # print(a['paper'])
-        # print(a['question_info'])
-        # receive_data = json.loads(request.body.decode())
-        # print(receive_data)
         paper = b['paper']
         question_info_list = b['question_info']
         # print(type(question_info_list))
         # print(paper, question_info_list)
         if paper and question_info_list:
-            paper_id = Paper.objects.get(name=paper).id
+            paper_id = paper
             if paper_id:
                 print(paper_id)
                 for i in question_info_list:
                     if i['id'] and i['point']:
-
                         question_id = i['id']
                         point = i['point']
-                        Paper_detail.objects.create(paper_id=paper_id, question_id=question_id, point=point).save()
-                        res_data['isOK'] = True
+                        a=Paper_detail.objects.filter(paper_id=paper_id)
+                        questionid=[]
+                        for i in a:
+                            questionid.append(i.question_id)
+                        print(questionid)
+                        if question_id in questionid:
+                            res_data['errmsg'] = '题库中有重复题目'
+                        else:
+                            Paper_detail.objects.create(paper_id=paper_id, question_id=question_id, point=point).save()
+                            res_data['isOK'] = True
                     else:
                         res_data['errmsg'] = '有分数未输入'
             else:
@@ -458,7 +474,7 @@ def loadpaper(request):
     return JsonResponse(res_data)
 
 
-# 未测试 根据所给科目 年级 难度系数 选择题数量 填空题数量 判断题数量 解答题数量 返回题目列表
+# 根据所给科目 年级 难度系数 选择题数量 填空题数量 判断题数量 解答题数量 返回题目列表
 @csrf_exempt
 def getautopaper(request):
     res_data = {'isOK': False, 'errmsg': '未知错误', 'questionlist': 'null','questionidlist':'null',
@@ -887,7 +903,7 @@ def delete_paper(request, paper_id=0):
             res_data['errmsg'] = '所选试卷为空'
     return JsonResponse(res_data)
 
-
+@csrf_exempt
 def uploadImg(request):  # 图片上传函数
     res_data = {'isOK': False, 'errmsg': '未知错误', 'image': 'null'}
     if request.method == 'POST':
@@ -898,6 +914,26 @@ def uploadImg(request):  # 图片上传函数
         print(res_data)
     return JsonResponse(res_data)
 
+@csrf_exempt
+def add_question(request,question_id=0):
+    res_data = {'isOK': False, 'errmsg': '未知错误'}
+    if request.method=='POST':
+        paper_id=request.POST.get('paperid')
+        point = request.POST.get('point')
+        if paper_id and point:
+            a = Paper_detail.objects.filter(paper_id=paper_id)
+            questionid = []
+            for i in a:
+                questionid.append(i.question_id)
+            print(questionid)
+            if question_id in questionid:
+                res_data['errmsg'] = '题库中有重复题目'
+            else:
+                Paper_detail.objects.create(paper_id=paper_id, question_id=question_id, point=point).save()
+                res_data['isOK'] = True
+        else:
+            res_data['errmsg'] = '有分数未输入'
+    return JsonResponse(res_data)
 
 # 下载试卷 生成答案
 @csrf_exempt

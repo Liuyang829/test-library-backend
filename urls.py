@@ -14,9 +14,7 @@ urlpatterns = [
     path(r'get_enterquestionpage/',views.get_enterquestionpage,name='get_enterquestionpage'),
     path(r'postpaperinfo/',views.postpaperinfo,name='postpaperinfo'),
     path(r'getmanualpaperquestion/',views.getmanualpaperquestion,name='getmanualpaperquestion'),
-    # 已测试，未做查重
     path(r'loadpaper/',views.loadpaper,name='loadpaper'),
-    # 未测试
     path(r'getautopaper/',views.getautopaper,name='getautopaper'),
     path(r'paper_detail/<int:paper_id>',views.paper_detail,name='paper_detail'),
     path(r'question_detail/<int:question_id>',views.question_detail,name='question_detail'),
@@ -28,5 +26,6 @@ urlpatterns = [
     path(r'delete_paper/<int:paper_id>',views.delete_paper,name='delete_paper'),
     path(r'delete_paperdetail/',views.delete_paperdetail,name='delete_paperdetail'),
     path(r'cascader/',views.cascader,name='cascader'),
-    path(r'uploadImg/',views.uploadImg,name='uploagImg')
+    path(r'uploadImg/',views.uploadImg,name='uploagImg'),
+    path(r'add_question/<int:question_id>',views.add_question,name="add_question")
 ]
