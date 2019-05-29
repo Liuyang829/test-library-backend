@@ -24,8 +24,10 @@ urlpatterns = [
     path(r'alter_point/<int:question_id>',views.alter_point,name='alter_point'),
     path(r'alter_paper/<int:paper_id>',views.alter_paper,name='alter_paper'),
     path(r'delete_paper/<int:paper_id>',views.delete_paper,name='delete_paper'),
-    path(r'delete_paperdetail/',views.delete_paperdetail,name='delete_paperdetail'),
+    path(r'delete_paperdetail/<int:question_id>',views.delete_paperdetail,name='delete_paperdetail'),
     path(r'cascader/',views.cascader,name='cascader'),
     path(r'uploadImg/',views.uploadImg,name='uploagImg'),
-    path(r'add_question/<int:question_id>',views.add_question,name="add_question")
+    path(r'add_question/<int:question_id>',views.add_question,name="add_question"),
+    path(r'paper_detail_addquestion/<int:paper_id>',views.paper_detail_addquestion,name="paper_detail_addquestion"),
+    path(r'downloadpaper/<int:paper_id>',views.downloadpaper,name="downloadpaper")
 ]

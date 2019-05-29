@@ -413,14 +413,17 @@ def getmanualpaperquestion(request):
             question_info = questionlist_tojsonlist(question_order_info)
             # 应该是只打印出了题目
             print(question_info)
-            res_data['isOK'] = True
             res_data['questionlist'] = question_info
+            if len(question_info)!=0:
+                res_data['isOK'] = True
+            else:
+                res_data['errmsg']="题库中无符合标准的试题"
         else:
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
 
 
-# 手动、自动通用
+# 自动通用
 # 组卷根据选择的题目存到试卷内容表中 -已测试
 # 前端所传递数据格式为
 # {
@@ -677,7 +680,7 @@ def getautopaper(request):
 # 进入每一个试卷详情页 查看题目、试卷信息 -已测试
 @csrf_exempt
 def paper_detail(request, paper_id=0):
-    res_data = {'isOK': False, 'errmsg': '未知错误', 'paperinfo': 'null', 'question_list': 'null'}
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'paperinfo': 'null', 'question_list': ''}
     if request.method == 'POST':
         print(paper_id)
         p = Paper.objects.filter(id=paper_id)
@@ -723,10 +726,43 @@ def paper_detail(request, paper_id=0):
             res_data['question_list'] = QuestionList
             res_data['isOK'] = True
         else:
-            res_data['errmsg'] = '无该试卷或当前试卷没有试题'
+            res_data['isOK'] = True
+            res_data['errmsg'] = '当前试卷没有试题'
     return JsonResponse(res_data)
 
+# 在试卷详情页中添加问题
+def paper_detail_addquestion(request,paper_id=0):
+    res_data = {'isOK': False, 'errmsg': '未知错误', 'paperinfo': 'null','knowledge1':'null'}
+    if request.method=='POST':
+        p = Paper.objects.filter(id=paper_id)
+        if p:
+            paperlist = paperlist_tojson(p)
+            res_data['paperinfo'] = paperlist[0]
+            subject=paperlist[0]['subject']
+            subject_id=Subject.objects.get(subject=subject).id
+            k12 = []
+            knowledge1list = Knowledge1.objects.filter(subject_id=subject_id)
+            for knowledge1 in knowledge1list:
+                knowledge1_json = {'value': 'null', 'label': 'null', 'children': 'null'}
+                knowledge1_children = []
+                knowledge1_json['value'] = knowledge1.knowledge1
+                knowledge1_json['label'] = knowledge1.knowledge1
+                knowledge1_id = Knowledge1.objects.get(knowledge1=knowledge1).id
+                knowledge2list = Knowledge2.objects.filter(knowledge1_id=knowledge1_id)
+                for knowledge2 in knowledge2list:
+                    knowledge2_json = {'value': 'null', 'label': 'null'}
+                    knowledge2_json['value'] = knowledge2.knowledge2
+                    knowledge2_json['label'] = knowledge2.knowledge2
+                    knowledge1_children.append(knowledge2_json)
+                knowledge1_json['children'] = knowledge1_children
+                k12.append(knowledge1_json)
+            res_data['knowledge1'] = k12
+            res_data['isOK']=True
+        else:
+            res_data['errmsg'] = '当前试卷id为空'
+    return JsonResponse(res_data)
 
+# 用到了
 # 点击题库列表页面上修改按钮-进入问题详情页，看到具体信息- 已测试
 @csrf_exempt
 def question_detail(request, question_id):
@@ -742,6 +778,7 @@ def question_detail(request, question_id):
     return JsonResponse(res_data)
 
 
+# 没用到
 # 修改问题 进入每一个问题的详情页 -点击问题详情页确认修改的提交按钮 -未测试
 @csrf_exempt
 def alter_question(request, question_id=0):
@@ -821,7 +858,7 @@ def delete_question(request, question_id=0):
             res_data['errmsg'] = '所选题目为空'
     return JsonResponse(res_data)
 
-
+# 没用到
 # 传来的formdata格式为 name points user school grade subject
 # 试卷题头的修改 -已测试
 @csrf_exempt
@@ -846,7 +883,7 @@ def alter_paper(request, paper_id=0):
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
 
-
+# 没用到
 # 传来的格式为formdata paper_id=x，point=x
 # 再点击进入试卷详情页时，每一个试题可以修改分数，点击每个试题旁的修改按钮即可-已测试
 @csrf_exempt
@@ -864,32 +901,27 @@ def alter_point(request, question_id):
             res_data['errmsg'] = '存在空值'
     return JsonResponse(res_data)
 
-
-# 传来的格式为{’paper_id‘：’xx‘,questionlist:[1，2,3...]}
-# 试卷内题目的删除 多选 -已测试
+# 用到
+# 试卷内题目的删除 单选 -已测试
 @csrf_exempt
-def delete_paperdetail(request):
+def delete_paperdetail(request,question_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
     if request.method == 'POST':
-        a = request.body.decode()
-        b = json.loads(a)
-        paper_id = b['paper_id']
-        questionlist = b['questionlist']
+        paper_id = request.POST.get('paper_id')
         pd = Paper_detail.objects.filter(paper=paper_id)
         if pd:
-            for i in questionlist:
-                pdi = Paper_detail.objects.filter(paper=paper_id, question=i)
-                if pdi:
-                    pdi.delete()
-                else:
-                    res_data['errmsg'] = '某题不存在'
+            pdi = Paper_detail.objects.filter(paper=paper_id, question=question_id)
+            if pdi:
+                pdi.delete()
+            else:
+                res_data['errmsg'] = '某题不存在'
             res_data['isOK'] = True
         else:
             res_data['errmsg'] = '该试卷为空'
     return JsonResponse(res_data)
 
 
-# 直接删除试卷 -已测试
+# 没用到 - 直接删除试卷 -已测试
 @csrf_exempt
 def delete_paper(request, paper_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
@@ -903,6 +935,7 @@ def delete_paper(request, paper_id=0):
             res_data['errmsg'] = '所选试卷为空'
     return JsonResponse(res_data)
 
+#用到了 录入试题 文本编辑器
 @csrf_exempt
 def uploadImg(request):  # 图片上传函数
     res_data = {'isOK': False, 'errmsg': '未知错误', 'image': 'null'}
@@ -914,6 +947,7 @@ def uploadImg(request):  # 图片上传函数
         print(res_data)
     return JsonResponse(res_data)
 
+# 用到了-手动组卷 试卷添加题目
 @csrf_exempt
 def add_question(request,question_id=0):
     res_data = {'isOK': False, 'errmsg': '未知错误'}
@@ -937,5 +971,27 @@ def add_question(request,question_id=0):
 
 # 下载试卷 生成答案
 @csrf_exempt
-def downloadpaper(request):
-    pass
+def downloadpaper(request,paper_id=0):
+    res_data = {'isOK': False, 'errmsg': '未知错误'}
+    if request.method=='POST':
+        paper_obj=Paper.objects.filter(id=paper_id)
+        if paper_obj.exists():
+            pd_obj=Paper_detail.objects.filter(paper_id=paper_id)
+            if pd_obj.exists():
+                question_id_list=[]
+                for i in pd_obj:
+                    question_id_list.append(i.question_id)
+                print(question_id_list)
+                choice_question_list = []
+                filling_question_list=[]
+                solve_question_list=[]
+                tf_question_list=[]
+                for i in question_id_list:
+                    q=Question.objects.get(id=i)
+
+
+        else:
+            res_data['errmsg']='该试卷为空'
+    return JsonResponse(res_data)
+
+
