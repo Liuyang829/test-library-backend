@@ -2,11 +2,12 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import redirect
 from django.http import HttpResponse, JsonResponse
 from .models import Img, Grade, Subject, User, Question, Paper, Paper_detail, Knowledge1, Knowledge2, School
 import random
 import json
+import os,pypandoc
+import codecs
 
 
 def index(request):
@@ -115,7 +116,7 @@ def questionlist_tojsonlist(a):
         QuestionData_each['knowledge2'] = Knowledge2.objects.get(id=i.knowledge2_id).knowledge2
         QuestionData_each['school'] = School.objects.get(id=i.school_id).school
         QuestionData_each['school_info'] = School.objects.get(id=i.school_id).school_info
-        QuestionData_each['subject'] = Subject.objects.get(id=i.school_id).subject
+        QuestionData_each['subject'] = Subject.objects.get(id=i.subject_id).subject
         QuestionList.append(QuestionData_each)
     return QuestionList
 
@@ -721,7 +722,7 @@ def paper_detail(request, paper_id=0):
                 QuestionData_each['knowledge2'] = Knowledge2.objects.get(id=j.knowledge2_id).knowledge2
                 QuestionData_each['school'] = School.objects.get(id=j.school_id).school
                 QuestionData_each['school_info'] = School.objects.get(id=j.school_id).school_info
-                QuestionData_each['subject'] = Subject.objects.get(id=j.school_id).subject
+                QuestionData_each['subject'] = Subject.objects.get(id=j.subject_id).subject
                 QuestionList.append(QuestionData_each)
             res_data['question_list'] = QuestionList
             res_data['isOK'] = True
@@ -972,10 +973,15 @@ def add_question(request,question_id=0):
 # 下载试卷 生成答案
 @csrf_exempt
 def downloadpaper(request,paper_id=0):
-    res_data = {'isOK': False, 'errmsg': '未知错误'}
+    res_data = {'isOK': False, 'errmsg': '未知错误','url':'','url1':''}
     if request.method=='POST':
-        paper_obj=Paper.objects.filter(id=paper_id)
-        if paper_obj.exists():
+        paper_obj=Paper.objects.get(id=paper_id)
+        if paper_obj:
+            p_name=paper_obj.name
+            p_points=paper_obj.points
+            p_subject=Subject.objects.get(id=paper_obj.subject_id).subject
+            p_school=School.objects.get(id=paper_obj.school_id).school
+            p_grade=Grade.objects.get(id=paper_obj.grade_id).grade
             pd_obj=Paper_detail.objects.filter(paper_id=paper_id)
             if pd_obj.exists():
                 question_id_list=[]
@@ -986,12 +992,85 @@ def downloadpaper(request,paper_id=0):
                 filling_question_list=[]
                 solve_question_list=[]
                 tf_question_list=[]
+                choice_point_list = []
+                filling_point_list = []
+                solve_point_list = []
+                tf_point_list = []
+                choice_answer_list = []
+                filling_answer_list = []
+                solve_answer_list = []
+                tf_answer_list = []
                 for i in question_id_list:
                     q=Question.objects.get(id=i)
-
-
+                    point=Paper_detail.objects.get(paper_id=paper_id,question_id=i).point
+                    if q.types=="选择题":
+                        choice_question_list.append(q.text)
+                        choice_point_list.append(point)
+                        choice_answer_list.append(q.answer)
+                    if q.types=="判断题":
+                        tf_question_list.append(q.text)
+                        tf_point_list.append(point)
+                        tf_answer_list.append(q.answer)
+                    if q.types=="解答题":
+                        solve_question_list.append(q.text)
+                        solve_point_list.append(point)
+                        solve_answer_list.append(q.answer)
+                    if q.types=="填空题":
+                        filling_question_list.append(q.text)
+                        filling_point_list.append(point)
+                        filling_answer_list.append(q.answer)
+                print(len(choice_question_list),len(filling_question_list),len(solve_question_list),len(tf_question_list))
+                tag=["、选择题：","、判断题：","、填空题：","、解答题："]
+                Questionall=[choice_question_list,tf_question_list,filling_question_list,solve_question_list]
+                Pointall=[choice_point_list,tf_point_list,filling_point_list,solve_point_list]
+                Answerall = [choice_answer_list, tf_answer_list, filling_answer_list, solve_answer_list]
+                title="<h1>"+p_name+"</h1>"
+                p_info="<p>年级："+p_grade+"&nbsp; &nbsp; &nbsp; 科目："+p_subject+"&nbsp; &nbsp; &nbsp; 学校："+p_school+"&nbsp; &nbsp; &nbsp; 总分："+str(p_points)+"</p><hr>"
+                html=title+p_info
+                html1="<h1>"+p_name+"答案"+"</h1>"+p_info
+                tag1=1
+                tag2=1
+                tag2_dict={'1':'一','2':'二','3':'三','4':'四'}
+                for i in range(len(Questionall)):
+                    if len(Questionall[i])==0:
+                        pass
+                    else:
+                        a="<h3>"+tag2_dict[str(tag2)]+tag[i]+"</h3>"
+                        answer="<h3>"+tag2_dict[str(tag2)]+tag[i]+"</h3>"
+                        for j in range(len(Questionall[i])):
+                            length=len(Questionall[i][j])
+                            b=Questionall[i][j][3:length]
+                            d = Answerall[i][j][3:length]
+                            c="<p>("+str(Pointall[i][j])+"分)"+str(tag1)+"."
+                            a=a+c+b
+                            answer=answer+c+d
+                            tag1=tag1+1
+                        tag2=tag2+1
+                        html1=html1+answer
+                        html=html+a
+                path1 = os.getcwd()
+                oldpath=path1
+                path2 = path1 + "\\test_library\\static\\test_library"
+                os.chdir(path2)
+                GEN_HTML = p_name+".html"  # 命名生成的html
+                GEN_DOCX= p_name+".docx"
+                GEN_HTML1 = p_name + "_answer.html"  # 命名生成的html
+                GEN_DOCX1= p_name + "_answer.docx"
+                f = codecs.open(GEN_HTML,'w','utf-8')
+                f.write(html)
+                f.close()
+                f1 = codecs.open(GEN_HTML1, 'w', 'utf-8')
+                f1.write(html1)
+                f1.close()
+                pypandoc.convert_file(GEN_HTML, 'docx', format='html', encoding='GBK', outputfile=GEN_DOCX)
+                pypandoc.convert_file(GEN_HTML1, 'docx', format='html', encoding='GBK', outputfile=GEN_DOCX1)
+                res_data['isOK']=True
+                res_data['url']="http://127.0.0.1:8000/static/test_library/"+GEN_DOCX
+                res_data['url1']="http://127.0.0.1:8000/static/test_library/"+GEN_DOCX1
+                os.chdir(oldpath)
+            else:
+                res_data['errmsg'] = '该试卷无试题'
         else:
             res_data['errmsg']='该试卷为空'
     return JsonResponse(res_data)
-
 
