@@ -99,7 +99,7 @@ def questionlist_tojsonlist(a):
     QuestionList = []
     for i in a:
         QuestionData_each = {'id': 'null', 'text': 'null', 'types': 'null',  'difficult': 'null', 'answer': 'null',
-                              'grade': 'null', 'knowledge1': 'null',
+                              'grade': 'null', 'knowledge1': 'null','number':'null',
                              'knowledge2': 'null', 'school': 'null', 'school_info': 'null', 'subject': 'null'}
         QuestionData_each['id'] = i.id
         QuestionData_each['text'] = i.text
@@ -111,6 +111,7 @@ def questionlist_tojsonlist(a):
         if i.difficult == 3:
             QuestionData_each['difficult'] = "困难"
         QuestionData_each['answer'] = i.answer
+        QuestionData_each['number']=len(Paper_detail.objects.filter(question_id=i.id))
         QuestionData_each['grade'] = Grade.objects.get(id=i.grade_id).grade
         QuestionData_each['knowledge1'] = Knowledge1.objects.get(id=i.knowledge1_id).knowledge1
         QuestionData_each['knowledge2'] = Knowledge2.objects.get(id=i.knowledge2_id).knowledge2
@@ -703,10 +704,11 @@ def paper_detail(request, paper_id=0):
                 # print(j.id,j.text)
                 # 这里返回的试题list需要分数，不能用那个函数
                 QuestionData_each = {'id': 'null', 'text': 'null', 'point': 'null', 'types': 'null','difficult': 'null',
-                                     'answer': 'null', 'grade': 'null',
+                                     'answer': 'null', 'grade': 'null','number':'null',
                                      'knowledge1': 'null', 'knowledge2': 'null', 'school': 'null',
                                      'school_info': 'null', 'subject': 'null'}
                 QuestionData_each['id'] = j.id
+                QuestionData_each['number'] = len(Paper_detail.objects.filter(question_id=j.id))
                 QuestionData_each['text'] = j.text
                 QuestionData_each['point'] = i.point
                 QuestionData_each['types'] = j.types
