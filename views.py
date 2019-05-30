@@ -90,6 +90,7 @@ def paperlist_tojson(a):
         PaperData_each['grade'] = Grade.objects.get(id=i.grade_id).grade
         PaperData_each['school'] = School.objects.get(id=i.school_id).school
         PaperList.append(PaperData_each)
+        PaperList.reverse()
     return PaperList
 
 
@@ -119,6 +120,10 @@ def questionlist_tojsonlist(a):
         QuestionData_each['school_info'] = School.objects.get(id=i.school_id).school_info
         QuestionData_each['subject'] = Subject.objects.get(id=i.subject_id).subject
         QuestionList.append(QuestionData_each)
+        for i in range(len(QuestionList)):
+            for j in range(len(QuestionList)-1-i):
+                if QuestionList[j]['number']<QuestionList[j+1]['number']:
+                    QuestionList[j],QuestionList[j+1]=QuestionList[j+1],QuestionList[j]
     return QuestionList
 
 
@@ -126,7 +131,6 @@ def questionlist_tojsonlist(a):
 @csrf_exempt
 def paper(request):
     if request.method == 'POST':
-        PaperList = []
         PaperInfo = Paper.objects.all()
         PaperList = paperlist_tojson(PaperInfo)
     return JsonResponse(PaperList, safe=False)
@@ -137,10 +141,7 @@ def paper(request):
 def question(request):
     if request.method == 'POST':
         QuestionInfo = Question.objects.all()
-        print(QuestionInfo)
-        print(QuestionInfo.first())
         QuestionList = questionlist_tojsonlist(QuestionInfo)
-        print(QuestionList)
     return JsonResponse(QuestionList, safe=False)
 
 
@@ -726,6 +727,11 @@ def paper_detail(request, paper_id=0):
                 QuestionData_each['school_info'] = School.objects.get(id=j.school_id).school_info
                 QuestionData_each['subject'] = Subject.objects.get(id=j.subject_id).subject
                 QuestionList.append(QuestionData_each)
+
+            for i in range(len(QuestionList)):
+                for j in range(len(QuestionList) - 1 - i):
+                    if QuestionList[j]['number'] < QuestionList[j + 1]['number']:
+                        QuestionList[j], QuestionList[j + 1] = QuestionList[j + 1], QuestionList[j]
             res_data['question_list'] = QuestionList
             res_data['isOK'] = True
         else:
